@@ -15,7 +15,7 @@ fi
 
 module_dir="${MODULE_DIR_OVERRIDE}"
 if [[ -z "${module_dir}" ]]; then
-module_dir="$(python3 - <<'PY'
+  module_dir="$(python3 - <<'PY'
 import os
 import validitysensor
 print(os.path.dirname(validitysensor.__file__))

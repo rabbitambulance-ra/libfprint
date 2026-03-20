@@ -64,6 +64,11 @@ while (( $# > 0 )); do
   esac
 done
 
+if [[ ( -n "${dbus_user}" && -z "${dbus_sid}" ) || ( -z "${dbus_user}" && -n "${dbus_sid}" ) ]]; then
+  echo "Pass both --dbus-user and --dbus-sid together, or omit both." >&2
+  exit 1
+fi
+
 if [[ ${ALLOW_NON_ROOT} != 1 && ${EUID} -ne 0 ]]; then
   echo "Run this script as root." >&2
   exit 1
@@ -128,4 +133,7 @@ fi
 echo
 echo "Bootstrap complete."
 echo "Next step:"
+if [[ ! -f "${DBUS_CONFIG}" ]]; then
+  echo "  create ${DBUS_CONFIG} with a user_to_sid mapping"
+fi
 echo "  sudo apply-python-validity-vfs0090-fix"

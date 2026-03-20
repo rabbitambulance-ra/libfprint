@@ -28,6 +28,8 @@ That means:
 
 It is not part of the normal Linux authentication path. Once the Linux side is configured, you should not need Windows for day-to-day use.
 
+The VM itself is not special. It is just one way to recover or confirm a working Windows-paired state when bare-metal Windows is unavailable or inconvenient.
+
 ## Requirements
 
 You need:
@@ -88,6 +90,22 @@ user_to_sid:
 
 Only map the user that should own the enrolled fingerprints.
 
+## What Stays Local
+
+Do not commit real pairing identities, BIOS serials, Windows SIDs, or `/etc` overrides to the repository.
+
+The publishable pieces are:
+
+* Generic patch files
+* Generic helper scripts
+* Example config with placeholders
+
+The machine-specific pieces stay local:
+
+* `/etc/python-validity-vfs0090-fix/identity.env`
+* `/etc/python-validity/dbus-service.yaml`
+* `/etc/systemd/system/python3-validity.service.d/override.conf`
+
 ## Replayable Install Flow
 
 The goal of the local package and helper scripts is to make the fix easy to replay if an upgrade overwrites the patched Python modules.
@@ -95,8 +113,8 @@ The goal of the local package and helper scripts is to make the fix easy to repl
 The flow is:
 
 1. Bootstrap the local identity config into `/etc/python-validity-vfs0090-fix/identity.env`.
-2. Install the local patch package or run the apply script.
-3. Keep the `dbus-service.yaml` SID mapping in place.
+2. Create or keep the `dbus-service.yaml` SID mapping in place.
+3. Install the local patch package or run the apply script.
 4. Let the pacman hook or apply script reapply the patches after upgrades.
 
 If you need to reapply manually, the helper scripts in this repository are:
@@ -104,6 +122,8 @@ If you need to reapply manually, the helper scripts in this repository are:
 * `scripts/bootstrap-python-validity-vfs0090-config.sh`
 * `scripts/apply-python-validity-vfs0090-fix.sh`
 * `scripts/revert-python-validity-vfs0090-fix.sh`
+
+The bootstrap helper can also write `dbus-service.yaml` if you pass `--dbus-user` and `--dbus-sid`.
 
 ## Testing
 

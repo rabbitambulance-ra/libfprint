@@ -12,7 +12,14 @@ fi
 restore_target() {
   local target="$1"
   local path="${PAM_DIR}/${target}"
+  local original_backup="${path}.fprintd-backup.orig"
   local latest_backup
+
+  if [[ -f "${original_backup}" ]]; then
+    install -m 0644 "${original_backup}" "${path}"
+    echo "Restored ${path} from ${original_backup}"
+    return 0
+  fi
 
   latest_backup="$(ls -1t "${path}".fprintd-backup-* 2>/dev/null | head -n1 || true)"
   if [[ -z "${latest_backup}" ]]; then

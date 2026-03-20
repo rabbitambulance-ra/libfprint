@@ -1,9 +1,9 @@
 pkgname=python-validity-vfs0090-fix
 pkgver=0.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc='Local replayable fixes for Validity VFS0090 hardware matching with python-validity'
 arch=('any')
-url='https://github.com/uunicorn/python-validity'
+url='https://github.com/3v1n0/libfprint'
 license=('MIT')
 depends=('bash' 'patch' 'python-validity' 'open-fprintd')
 optdepends=('fprintd-clients: fprintd-verify and related CLI tools')
@@ -13,8 +13,8 @@ source=(
   '90-python-validity-vfs0090-fix.hook'
 )
 sha256sums=(
-  'SKIP'
-  'SKIP'
+  'c3b3e448eb47c22b2cd580e0a58f13233b5e7f6177c5f2d68baa65ef604fe4b7'
+  '97bf4ef51906520f14d5938b5f8f11e5b770fc12689bc38f6593b76e0b87c6fe'
 )
 
 package() {

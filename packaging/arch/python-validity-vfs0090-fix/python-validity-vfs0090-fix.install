@@ -3,6 +3,8 @@ post_install() {
   echo 'If this machine is already configured, the pacman hook and apply script can replay the fix automatically.'
   echo 'Otherwise bootstrap local identity first:'
   echo '  sudo bootstrap-python-validity-vfs0090-config --product-name "<name>" --product-serial "<serial>"'
+  echo 'Create a Windows SID mapping in /etc/python-validity/dbus-service.yaml, or let bootstrap write it:'
+  echo '  sudo bootstrap-python-validity-vfs0090-config --product-name "<name>" --product-serial "<serial>" --dbus-user "<linux-user>" --dbus-sid "<windows-sid>" --force'
   echo 'Then apply the Python patches:'
   echo '  sudo apply-python-validity-vfs0090-fix'
   echo 'Then enable PAM integration as needed:'

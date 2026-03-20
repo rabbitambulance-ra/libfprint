@@ -91,7 +91,42 @@ find_data_dir() {
 
 extract_override_value() {
   local key="$1"
-  sed -n "s/^Environment=${key}=//p" "${OVERRIDE_FILE}" 2>/dev/null | head -n1
+  python3 - "${OVERRIDE_FILE}" "${key}" <<'PY'
+import pathlib
+import shlex
+import sys
+
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+
+if not path.exists():
+    raise SystemExit(1)
+
+for raw_line in path.read_text().splitlines():
+    line = raw_line.strip()
+    if not line.startswith("Environment="):
+        continue
+
+    payload = line[len("Environment="):]
+    try:
+        tokens = shlex.split(payload)
+    except ValueError:
+        continue
+
+    for token in tokens:
+        if token.startswith(f"{key}="):
+            print(token[len(key) + 1:])
+            raise SystemExit(0)
+
+raise SystemExit(1)
+PY
+}
+
+quote_env_value() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '"%s"' "${value}"
 }
 
 bootstrap_identity_env_from_override() {
@@ -108,8 +143,8 @@ bootstrap_identity_env_from_override() {
 
   mkdir -p "${CONFIG_DIR}"
   cat > "${ENV_FILE}" <<EOF
-PYTHON_VALIDITY_PRODUCT_NAME="${current_name}"
-PYTHON_VALIDITY_PRODUCT_SERIAL="${current_serial}"
+PYTHON_VALIDITY_PRODUCT_NAME=$(quote_env_value "${current_name}")
+PYTHON_VALIDITY_PRODUCT_SERIAL=$(quote_env_value "${current_serial}")
 EOF
   chmod 0600 "${ENV_FILE}"
   say "Bootstrapped ${ENV_FILE} from the current override"
@@ -119,7 +154,7 @@ module_dir="${MODULE_DIR_OVERRIDE}"
 sitepkg_root="${SITEPKG_ROOT_OVERRIDE}"
 
 if [[ -z "${module_dir}" ]]; then
-module_dir="$(python3 - <<'PY'
+  module_dir="$(python3 - <<'PY'
 import os
 import validitysensor
 print(os.path.dirname(validitysensor.__file__))

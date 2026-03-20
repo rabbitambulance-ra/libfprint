@@ -3,7 +3,6 @@ set -euo pipefail
 
 ALLOW_NON_ROOT="${PYTHON_VALIDITY_VFS0090_FIX_ALLOW_NON_ROOT:-0}"
 PAM_DIR="${PYTHON_VALIDITY_VFS0090_FIX_PAM_DIR:-/etc/pam.d}"
-STAMP="${PYTHON_VALIDITY_VFS0090_FIX_STAMP:-$(date +%Y%m%d)}"
 DISPLAY_MANAGER_LINK="${PYTHON_VALIDITY_VFS0090_FIX_DISPLAY_MANAGER_LINK:-/etc/systemd/system/display-manager.service}"
 
 if [[ ${ALLOW_NON_ROOT} != 1 && ${EUID} -ne 0 ]]; then
@@ -44,14 +43,16 @@ patch_target() {
   local target="$1"
   local anchor="$2"
   local path="${PAM_DIR}/${target}"
-  local backup="${path}.fprintd-backup-${STAMP}"
+  local backup="${path}.fprintd-backup.orig"
   local tmp
 
   if [[ ! -f "${path}" ]]; then
     return 0
   fi
 
-  install -D -m 0644 "${path}" "${backup}"
+  if [[ ! -f "${backup}" ]]; then
+    install -D -m 0644 "${path}" "${backup}"
+  fi
   tmp="$(mktemp)"
 
   awk -v line="${PAM_LINE}" -v anchor="${anchor}" '

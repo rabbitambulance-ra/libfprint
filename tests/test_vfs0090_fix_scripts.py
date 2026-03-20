@@ -75,6 +75,22 @@ class Vfs0090FixScriptsTest(unittest.TestCase):
             cwd=REPO_ROOT,
         )
 
+    def run_script_expect_failure(
+        self, script: Path, *args: str, env: dict | None = None
+    ) -> subprocess.CompletedProcess:
+        merged_env = os.environ.copy()
+        merged_env.update(self.common_env)
+        if env:
+            merged_env.update(env)
+        return subprocess.run(
+            [str(script), *args],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=merged_env,
+            cwd=REPO_ROOT,
+        )
+
     def write_fake_pam(self, name: str, body: str) -> Path:
         self.pam_dir.mkdir(parents=True, exist_ok=True)
         path = self.pam_dir / name
@@ -144,6 +160,36 @@ class Vfs0090FixScriptsTest(unittest.TestCase):
             'PYTHON_VALIDITY_PRODUCT_SERIAL="CurrentSerial"\n',
         )
 
+    def test_bootstrap_from_quoted_override_preserves_spaces_and_backslashes(self):
+        self.override_file.parent.mkdir(parents=True, exist_ok=True)
+        self.override_file.write_text(
+            "[Service]\n"
+            'Environment="PYTHON_VALIDITY_PRODUCT_NAME=Example VM"\n'
+            'Environment="PYTHON_VALIDITY_PRODUCT_SERIAL=VM\\\\SERIAL 01"\n'
+        )
+
+        self.run_script(BOOTSTRAP)
+
+        self.assertEqual(
+            (self.config_dir / "identity.env").read_text(),
+            'PYTHON_VALIDITY_PRODUCT_NAME="Example VM"\n'
+            'PYTHON_VALIDITY_PRODUCT_SERIAL="VM\\\\SERIAL 01"\n',
+        )
+
+    def test_bootstrap_requires_complete_dbus_mapping_arguments(self):
+        result = self.run_script_expect_failure(
+            BOOTSTRAP,
+            "--product-name",
+            "ExampleProduct",
+            "--product-serial",
+            "ExampleSerial",
+            "--dbus-user",
+            "example-user",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Pass both --dbus-user and --dbus-sid together", result.stderr)
+
     def test_enable_local_pam_is_idempotent_and_warn_free(self):
         sudo_pam = self.write_fake_pam(
             "sudo",
@@ -178,6 +224,12 @@ class Vfs0090FixScriptsTest(unittest.TestCase):
         expected = "auth       sufficient   pam_fprintd.so max-tries=3 timeout=10"
         self.assertEqual(sudo_pam.read_text().count(expected), 1)
         self.assertEqual(su_pam.read_text().count(expected), 0)
+        self.assertEqual(
+            (self.pam_dir / "sudo.fprintd-backup.orig").read_text(),
+            "#%PAM-1.0\n"
+            "auth\tinclude\tsystem-auth\n"
+            "account\tinclude\tsystem-auth\n",
+        )
 
     def test_enable_local_can_optionally_patch_su(self):
         self.write_fake_pam(

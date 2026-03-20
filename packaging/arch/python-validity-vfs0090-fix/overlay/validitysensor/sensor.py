@@ -750,7 +750,10 @@ class Sensor:
                 return x, y, w1, w2
 
             finally:
-                tls.app(unhexlify('04'))  # capture stop if still running, cleanup
+                try:
+                    tls.app(unhexlify('04'))  # capture stop if still running, cleanup
+                except Exception as cleanup_error:
+                    logging.debug('Ignoring vfs0090 capture cleanup failure: %s', cleanup_error)
 
         try:
             assert_status(tls.app(self.build_cmd_02(mode)))
