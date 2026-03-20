@@ -1,0 +1,80 @@
+--- a/validitysensor/sensor.py
++++ b/validitysensor/sensor.py
+@@ -1,3 +1,4 @@
++import errno
+ import logging
+ import os.path
+ import typing
+@@ -693,6 +694,64 @@
+         usb.cancel = True
+ 
+     def capture(self, mode: CaptureMode) -> typing.Tuple[int, int, int, int]:
++        if self.device_info.type == 0xdb and mode != CaptureMode.CALIBRATE:
++            effective_mode = CaptureMode.ENROLL if mode == CaptureMode.IDENTIFY else mode
++
++            try:
++                assert_status(tls.app(self.build_cmd_02(effective_mode)))
++
++                b = usb.wait_int()
++                if b[0] != 0:
++                    raise Exception('wait_start: Unexpected interrupt type %s' % hexlify(b).decode())
++
++                while True:
++                    b = usb.wait_int()
++                    if b[0] == 2:
++                        break
++
++                wait_till_finished()
++                res = get_prg_status2()
++
++                for _ in range(2):
++                    try:
++                        b = bytes(usb.dev.read(131, 1024, timeout=250))
++                    except usb_core.USBError as e:
++                        if e.errno == errno.ETIMEDOUT:
++                            break
++                        raise
++
++                    if b[0] != 3:
++                        raise Exception('Unexpected interrupt type %s' % hexlify(b).decode())
++
++                    if b[1] not in (0x40, 0x41, 0x43):
++                        raise Exception('Unexpected completion interrupt %s' % hexlify(b).decode())
++
++                    if b[1] == 0x43:
++                        break
++
++                assert_status(res)
++                res = res[2:]
++
++                l, res = res[:4], res[4:]
++                if len(l) < 4:
++                    return 0, 0, 0, 0
++                l, = unpack('<L', l)
++
++                if l != len(res):
++                    return 0, 0, 0, 0
++
++                if len(res) < 12:
++                    return 0, 0, 0, 0
++                x, y, w1, w2, error = unpack('<HHHHL', res[:12])
++
++                if error != 0:
++                    raise Exception('Scanning problem: %04x' % error)
++
++                return x, y, w1, w2
++
++            finally:
++                tls.app(unhexlify('04'))  # capture stop if still running, cleanup
++
+         try:
+             assert_status(tls.app(self.build_cmd_02(mode)))
+ 
+@@ -906,6 +965,7 @@
+                 glow_end_scan()
+                 raise e
+             except Exception as e:
++                logging.exception(e)
+                 # Capture failed, retry
+                 update_cb(e)
+                 sleep(1)

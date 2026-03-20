@@ -1,0 +1,42 @@
+--- a/validitysensor/tls.py
++++ b/validitysensor/tls.py
+@@ -34,6 +34,9 @@
+ 
+ crypto_backend = default_backend()
+ 
++ENV_PRODUCT_NAME = 'PYTHON_VALIDITY_PRODUCT_NAME'
++ENV_PRODUCT_SERIAL = 'PYTHON_VALIDITY_PRODUCT_SERIAL'
++
+ 
+ def prf(secret: bytes, seed: bytes, length: int):
+     n = (length + 0x20 - 1) // 0x20
+@@ -92,14 +95,21 @@
+         self.usb = usb
+         self.trace_enabled = False
+         self.reset()
+-        try:
+-            with open('/sys/class/dmi/id/product_name', 'r') as node:
+-                product_name = node.read().strip()
+-            with open('/sys/class/dmi/id/product_serial', 'r') as node:
+-                product_serial = node.read().strip()
+-        except:
+-            product_name = 'VirtualBox'
+-            product_serial = '0'
++        product_name = os.getenv(ENV_PRODUCT_NAME)
++        product_serial = os.getenv(ENV_PRODUCT_SERIAL)
++
++        if product_name and product_serial:
++            logging.info('Using pairing identity override from environment')
++        else:
++            try:
++                with open('/sys/class/dmi/id/product_name', 'r') as node:
++                    product_name = node.read().strip()
++                with open('/sys/class/dmi/id/product_serial', 'r') as node:
++                    product_serial = node.read().strip()
++            except Exception:
++                logging.warning('Unable to read DMI pairing identity; continuing without a host-specific fallback')
++                product_name = ''
++                product_serial = ''
+ 
+         self.set_hwkey(product_name=product_name, serial_number=product_serial)
+ 

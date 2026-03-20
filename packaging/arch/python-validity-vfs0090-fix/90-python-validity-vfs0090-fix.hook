@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = python-validity
+Target = open-fprintd
+
+[Action]
+Description = Re-applying local VFS0090 python-validity fixes
+When = PostTransaction
+Exec = /usr/bin/apply-python-validity-vfs0090-fix --if-configured --quiet
+NeedsTargets

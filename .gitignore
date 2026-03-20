@@ -1,3 +1,8 @@
 *.o
 *.swp
 _build
+__pycache__/
+.vscode/
+packaging/arch/python-validity-vfs0090-fix/pkg/
+packaging/arch/python-validity-vfs0090-fix/src/
+packaging/arch/python-validity-vfs0090-fix/*.pkg.tar.zst

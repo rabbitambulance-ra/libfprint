@@ -1,0 +1,17 @@
+post_install() {
+  echo 'python-validity-vfs0090-fix installed.'
+  echo 'If this machine is already configured, the pacman hook and apply script can replay the fix automatically.'
+  echo 'Otherwise bootstrap local identity first:'
+  echo '  sudo bootstrap-python-validity-vfs0090-config --product-name "<name>" --product-serial "<serial>"'
+  echo 'Then apply the Python patches:'
+  echo '  sudo apply-python-validity-vfs0090-fix'
+  echo 'Then enable PAM integration as needed:'
+  echo '  sudo enable-pam-fprintd-minimal   # conservative default'
+  echo '  sudo enable-pam-fprintd-local'
+  echo 'Use sudo -i for a fingerprint-backed root shell.'
+  /usr/bin/apply-python-validity-vfs0090-fix --if-configured --quiet || true
+}
+
+post_upgrade() {
+  /usr/bin/apply-python-validity-vfs0090-fix --if-configured --quiet || true
+}

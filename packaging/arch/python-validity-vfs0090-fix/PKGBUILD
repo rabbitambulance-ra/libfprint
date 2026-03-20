@@ -1,0 +1,46 @@
+pkgname=python-validity-vfs0090-fix
+pkgver=0.1.0
+pkgrel=2
+pkgdesc='Local replayable fixes for Validity VFS0090 hardware matching with python-validity'
+arch=('any')
+url='https://github.com/uunicorn/python-validity'
+license=('MIT')
+depends=('bash' 'patch' 'python-validity' 'open-fprintd')
+optdepends=('fprintd-clients: fprintd-verify and related CLI tools')
+install="${pkgname}.install"
+source=(
+  'identity.env.example'
+  '90-python-validity-vfs0090-fix.hook'
+)
+sha256sums=(
+  'SKIP'
+  'SKIP'
+)
+
+package() {
+  install -Dm0644 "${srcdir}/identity.env.example" \
+    "${pkgdir}/usr/share/doc/${pkgname}/identity.env.example"
+
+  install -Dm0644 "${srcdir}/90-python-validity-vfs0090-fix.hook" \
+    "${pkgdir}/usr/share/libalpm/hooks/90-python-validity-vfs0090-fix.hook"
+
+  install -Dm0644 "${startdir}/../../patches/python-validity/0001-tls-identity-override.patch" \
+    "${pkgdir}/usr/share/${pkgname}/patches/python-validity/0001-tls-identity-override.patch"
+  install -Dm0644 "${startdir}/../../patches/python-validity/0002-vfs0090-capture-fix.patch" \
+    "${pkgdir}/usr/share/${pkgname}/patches/python-validity/0002-vfs0090-capture-fix.patch"
+
+  install -Dm0755 "${startdir}/../../../scripts/bootstrap-python-validity-vfs0090-config.sh" \
+    "${pkgdir}/usr/bin/bootstrap-python-validity-vfs0090-config"
+  install -Dm0755 "${startdir}/../../../scripts/apply-python-validity-vfs0090-fix.sh" \
+    "${pkgdir}/usr/bin/apply-python-validity-vfs0090-fix"
+  install -Dm0755 "${startdir}/../../../scripts/revert-python-validity-vfs0090-fix.sh" \
+    "${pkgdir}/usr/bin/revert-python-validity-vfs0090-fix"
+  install -Dm0755 "${startdir}/../../../scripts/enable-pam-fprintd-minimal.sh" \
+    "${pkgdir}/usr/bin/enable-pam-fprintd-minimal"
+  install -Dm0755 "${startdir}/../../../scripts/disable-pam-fprintd-minimal.sh" \
+    "${pkgdir}/usr/bin/disable-pam-fprintd-minimal"
+  install -Dm0755 "${startdir}/../../../scripts/enable-pam-fprintd-local.sh" \
+    "${pkgdir}/usr/bin/enable-pam-fprintd-local"
+  install -Dm0755 "${startdir}/../../../scripts/disable-pam-fprintd-local.sh" \
+    "${pkgdir}/usr/bin/disable-pam-fprintd-local"
+}
