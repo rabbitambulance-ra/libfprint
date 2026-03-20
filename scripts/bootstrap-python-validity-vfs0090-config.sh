@@ -76,7 +76,35 @@ fi
 
 extract_override_value() {
   local key="$1"
-  sed -n "s/^Environment=${key}=//p" "${OVERRIDE_FILE}" 2>/dev/null | head -n1
+  python3 - "${OVERRIDE_FILE}" "${key}" <<'PY'
+import pathlib
+import shlex
+import sys
+
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+
+if not path.exists():
+    raise SystemExit(1)
+
+for raw_line in path.read_text().splitlines():
+    line = raw_line.strip()
+    if not line.startswith("Environment="):
+        continue
+
+    payload = line[len("Environment="):]
+    try:
+        tokens = shlex.split(payload)
+    except ValueError:
+        continue
+
+    for token in tokens:
+        if token.startswith(f"{key}="):
+            print(token[len(key) + 1:])
+            raise SystemExit(0)
+
+raise SystemExit(1)
+PY
 }
 
 quote_env_value() {
